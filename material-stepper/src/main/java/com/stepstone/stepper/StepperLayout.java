@@ -243,6 +243,8 @@ public class StepperLayout extends LinearLayout implements TabsContainer.TabItem
 
     private boolean mInProgress;
 
+    private boolean mIsRtlEnabled;
+
     @StyleRes
     private int mStepperLayoutTheme;
 
@@ -564,6 +566,14 @@ public class StepperLayout extends LinearLayout implements TabsContainer.TabItem
     }
 
     /**
+     * Sets layout direction of mPager
+     * @param isRtlEnabled true if mPager should be swiped from right to left
+     */
+    public void setRtlEnabled(boolean isRtlEnabled) {
+        this.mIsRtlEnabled = isRtlEnabled;
+    }
+
+    /**
      * Sets the mask for the stepper feedback type.
      * @param feedbackTypeMask step feedback type mask, should contain one or more flags from {@link StepperFeedbackType}
      */
@@ -736,6 +746,8 @@ public class StepperLayout extends LinearLayout implements TabsContainer.TabItem
 
             mTabNavigationEnabled = a.getBoolean(R.styleable.StepperLayout_ms_tabNavigationEnabled, true);
 
+            mIsRtlEnabled = a.getBoolean(com.stepstone.stepper.R.styleable.StepperLayout_ms_isRtlEnabled, false);
+
             mStepperLayoutTheme = a.getResourceId(R.styleable.StepperLayout_ms_stepperLayoutTheme, R.style.MSDefaultStepperLayoutTheme);
 
             a.recycle();
@@ -758,7 +770,12 @@ public class StepperLayout extends LinearLayout implements TabsContainer.TabItem
     }
 
     private Step findCurrentStep() {
-        return mStepAdapter.findStep(mCurrentStepPosition);
+        int rtlPosition = (mStepAdapter.getCount() - 1) - mCurrentStepPosition;
+        if (mIsRtlEnabled) {
+            return mStepAdapter.findStep(rtlPosition);
+        } else {
+            return mStepAdapter.findStep(mCurrentStepPosition);
+        }
     }
 
     private void updateErrorFlagWhenGoingBack() {
@@ -822,7 +839,18 @@ public class StepperLayout extends LinearLayout implements TabsContainer.TabItem
     }
 
     private void onUpdate(int newStepPosition, boolean userTriggeredChange) {
-        mPager.setCurrentItem(newStepPosition);
+        int rtlPosition = (mStepAdapter.getCount() - 1) - newStepPosition;
+        Step step;
+
+        if (mIsRtlEnabled) {
+            mPager.setCurrentItem(rtlPosition);
+            mListener.onStepSelected(rtlPosition);
+            step = mStepAdapter.findStep(rtlPosition);
+        } else {
+            mPager.setCurrentItem(newStepPosition);
+            mListener.onStepSelected(newStepPosition);
+            step = mStepAdapter.findStep(newStepPosition);
+        }
         final boolean isLast = isLastPosition(newStepPosition);
         final boolean isFirst = newStepPosition == 0;
         AnimationUtil.fadeViewVisibility(mNextNavigationButton, isLast ? View.GONE : View.VISIBLE, userTriggeredChange);
@@ -841,8 +869,6 @@ public class StepperLayout extends LinearLayout implements TabsContainer.TabItem
         setCompoundDrawablesForNavigationButtons(viewModel.getBackButtonStartDrawableResId(), viewModel.getNextButtonEndDrawableResId());
 
         mStepperType.onStepSelected(newStepPosition, userTriggeredChange);
-        mListener.onStepSelected(newStepPosition);
-        Step step = mStepAdapter.findStep(newStepPosition);
         if (step != null) {
             step.onSelected();
         }
