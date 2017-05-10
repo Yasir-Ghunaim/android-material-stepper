@@ -41,20 +41,29 @@ public abstract class AbstractFragmentStepAdapter
     @NonNull
     protected final Context context;
 
+    private final boolean mRtlEnabled;
+
     public AbstractFragmentStepAdapter(@NonNull FragmentManager fm, @NonNull Context context) {
         super(fm);
         this.mFragmentManager = fm;
         this.context = context;
+        this.mRtlEnabled = context.getResources().getBoolean(R.bool.ms_rtlEnabled);
     }
 
     @Override
     public final Fragment getItem(@IntRange(from = 0) int position) {
+        if(mRtlEnabled) {
+            position = (this.getCount() - 1) - position;
+        }
         return (Fragment) createStep(position);
     }
 
     /** {@inheritDoc} */
     @SuppressWarnings("unchecked")
     public Step findStep(@IntRange(from = 0) int position) {
+        if(mRtlEnabled) {
+            position = (this.getCount() - 1) - position;
+        }
         String fragmentTag =  "android:switcher:" + R.id.ms_stepPager + ":" + this.getItemId(position);
         return (Step) mFragmentManager.findFragmentByTag(fragmentTag);
     }
